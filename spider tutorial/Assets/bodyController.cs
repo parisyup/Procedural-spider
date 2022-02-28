@@ -8,7 +8,6 @@ public class bodyController : MonoBehaviour
     public GameObject[] legTips; //to get the leg positions (the tip of the leg that i used in my old video)
     public GameObject[] legTargets;
     public GameObject[] legCubes;
-    public bool isMoving = false;
 
     public bool enableBodyRotation = false;
     public bool enableMovementRotation = false;
@@ -90,7 +89,7 @@ public class bodyController : MonoBehaviour
         //legTargets[index].transform.position += transform.up * Mathf.Sin(i / (float)(smoothness + 1f) * Mathf.PI) * stepHeight;
         yield return new WaitForFixedUpdate();
 
-        if (Vector3.Distance(legTargets[index].transform.position, legCubes[index].transform.position) <= moveStoppingDistance)
+        if (Vector3.Distance(legTargets[index].transform.position, moveTo) <= moveStoppingDistance)
         {
             legTargets[index].transform.position = moveTo - new Vector3(0, 0.5f, 0);
             legOriginalPositions[index] = moveTo - new Vector3(0, 0.5f, 0);

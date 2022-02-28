@@ -3378,9 +3378,9 @@ MonoBehaviour:
   isMoving: 0
   enableBodyRotation: 1
   enableMovementRotation: 1
-  legMoveSpeed: 320
-  moveDistance: 3
-  moveStoppingDistance: 2
+  legMoveSpeed: 300
+  moveDistance: 4
+  moveStoppingDistance: 1.7
   lastBodyUp: {x: 0, y: 0, z: 0}
   smoothness: 8
   multiplier: 7
