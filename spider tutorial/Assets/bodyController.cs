@@ -18,15 +18,19 @@ public class bodyController : MonoBehaviour
     Vector3[] legPositions;
     Vector3[] legOriginalPositions;
     List<int> nextIndexToMove = new List<int>();
-    public float legMoveSpeed = 7f; 
-    public float moveDistance = 0.7f; 
-    public float moveStoppingDistance = 0.4f;
+    public float legMoveSpeed = 7f;
+    public float moveDistance = 0.7f;
+    public float stepHeight = .15f;
     public Vector3 lastBodyUp;
-    public float smoothness = 8; //to smooth out the movement of the body
+    public float LegSmoothness = 8; //to smooth out the movement of the body
+    public float BodySmoothness = 8; //to smooth out the movement of the body
 
     public float multiplier = 4;
 
-    
+    public float resetTimer = 0.5f;
+
+    float setup = 0.2f;
+
     void Start()
     {
         lastBodyUp = transform.up; //setting the lastbody up which is basically just the up side of the body i have attached a photo to try and explain it
@@ -42,61 +46,73 @@ public class bodyController : MonoBehaviour
         }
 
         lastSpiderPosition = spider.transform.position;
+        rotateBody();
     }
 
 
     void Update()
     {
-        rotateBody();   
-        velocity = spider.transform.position - lastSpiderPosition;
-        velocity = (velocity + smoothness * lastVelocity) / (smoothness + 1f);
-        //Debug.Log(velocity);
+        
 
-        moveLegs(); 
+        velocity = spider.transform.position - lastSpiderPosition;
+        velocity = (velocity + BodySmoothness * lastVelocity) / (BodySmoothness + 1f);
+
         
+        if (setup > 0) {setup -= Time.deltaTime; return; }
+        
+        moveLegs();
+        rotateBody();
+
         lastSpiderPosition = spider.transform.position;
-            
+
         lastVelocity = velocity;
-        
+
     }
 
     void moveLegs()
     {
         if (!enableMovementRotation) return;
-        for(int i = 0; i < legTargets.Length; i++)
+        for (int i = 0; i < legTargets.Length; i++)
         {
-            if(Vector3.Distance(legTargets[i].transform.position, legCubes[i].transform.position) >= moveDistance)
+            if (Vector3.Distance(legTargets[i].transform.position, legCubes[i].transform.position) >= moveDistance)
             {
-                nextIndexToMove.Add(i);
+                if (!nextIndexToMove.Contains(i)) nextIndexToMove.Add(i);
             }
-            else
+            else if (!nextIndexToMove.Contains(i))
             {
                 legTargets[i].transform.position = legOriginalPositions[i];
             }
-            
+
         }
 
         if (nextIndexToMove.Count == 0) return;
         Vector3 targetPosition = legCubes[nextIndexToMove[0]].transform.position + Mathf.Clamp(velocity.magnitude * multiplier, 0.0f, 1.5f) * (legCubes[nextIndexToMove[0]].transform.position - legTargets[nextIndexToMove[0]].transform.position) + velocity * multiplier;
         StartCoroutine(step(nextIndexToMove[0], targetPosition));
+        if (nextIndexToMove.Count >= legPositions.Length)
+        {
+            resetTimer -= Time.deltaTime;
+            if (resetTimer <= 0) nextIndexToMove.Clear();
+        }
+        else resetTimer = 0.5f;
     }
 
     IEnumerator step(int index, Vector3 moveTo)
     {
         Vector3 startPos = legOriginalPositions[index];
 
-        legTargets[index].transform.position = Vector3.Lerp(startPos, moveTo + new Vector3(0,0.5f,0), legMoveSpeed * Time.deltaTime);
-        //legTargets[index].transform.position += transform.up * Mathf.Sin(i / (float)(smoothness + 1f) * Mathf.PI) * stepHeight;
-        yield return new WaitForFixedUpdate();
-
-        if (Vector3.Distance(legTargets[index].transform.position, moveTo) <= moveStoppingDistance)
+        for (int i = 1; i <= LegSmoothness; ++i)
         {
-            legTargets[index].transform.position = moveTo - new Vector3(0, 0.5f, 0);
-            legOriginalPositions[index] = moveTo - new Vector3(0, 0.5f, 0);
-
-            if (nextIndexToMove.Count != 0)
-                nextIndexToMove.RemoveAt(0);
+            legTargets[index].transform.position = Vector3.Lerp(startPos, moveTo + new Vector3(0, Mathf.Sin(i / (float)(LegSmoothness + 1f) * Mathf.PI) * stepHeight, 0), (i / LegSmoothness + 1f) * legMoveSpeed);
+            yield return new WaitForFixedUpdate();
         }
+
+
+        legTargets[index].transform.position = moveTo;
+        legOriginalPositions[index] = moveTo;
+
+        if (nextIndexToMove.Count != 0)
+            nextIndexToMove.RemoveAt(0);
+
 
     }
 
@@ -106,7 +122,7 @@ public class bodyController : MonoBehaviour
         Vector3 v1 = legTips[0].transform.position - legTips[1].transform.position;
         Vector3 v2 = legTips[2].transform.position - legTips[3].transform.position;
         Vector3 normal = Vector3.Cross(v1, v2).normalized;
-        Vector3 up = Vector3.Lerp(lastBodyUp, normal, 1f / (float)(smoothness + 1));
+        Vector3 up = Vector3.Lerp(lastBodyUp, normal, 1f / (float)(BodySmoothness + 1));
         transform.up = up;
         lastBodyUp = up;
     }
